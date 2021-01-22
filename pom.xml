@@ -20,7 +20,12 @@
       <artifactId>sudoku-generator</artifactId>
       <version>0.0.1-SNAPSHOT</version>    
     </dependency>
-  
+    
+	<dependency>
+	    <groupId>com.amazonaws</groupId>
+	    <artifactId>aws-java-sdk-dynamodb</artifactId>
+	    <version>1.11.940</version>
+	</dependency>  
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-lambda-java-log4j2</artifactId>
