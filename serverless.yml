@@ -33,7 +33,7 @@ provider:
    - Effect: "Allow"
      Action:
        - "dynamodb:*"
-     Resource: "arn:aws:dynamodb:*:*:table/sudoku_puzles_table*"
+     Resource: "arn:aws:dynamodb:*:*:table/sudoku_puzzles*"
 #      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
 #    - Effect: "Allow"
 #      Action:
@@ -54,6 +54,9 @@ package:
   artifact: target/sudokugenerator-lambda-dev.jar
 
 functions:
+  generate-puzzle-bulk:
+    handler: kh.sudoku.generatorlambda.SudokuBulkGeneratorHandler
+    
   generate-puzzle:
     handler: kh.sudoku.generatorlambda.SudokuGeneratorHandler
 #    The following are a few example events you can configure
@@ -102,26 +105,17 @@ resources:
     SudokuPuzzlesTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: SudokuPuzzles
+        TableName: sudoku_puzzles
         AttributeDefinitions:
           - AttributeName: id
+            AttributeType: S
+          - AttributeName: difficulty
             AttributeType: N
         KeySchema:
           - AttributeName: id
             KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-    SudokuPuzzlesIdTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: SudokuPuzzlesLastUsedIds
-        AttributeDefinitions:
-          - AttributeName: id
-            AttributeType: N
-        KeySchema:
-          - AttributeName: id
-            KeyType: HASH
+          - AttributeName: difficulty
+            KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1

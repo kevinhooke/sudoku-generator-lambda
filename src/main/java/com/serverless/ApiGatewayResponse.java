@@ -25,6 +25,10 @@ public class ApiGatewayResponse {
 		this.isBase64Encoded = isBase64Encoded;
 	}
 
+	public String toString() {
+	    return body;
+	}
+	
 	public int getStatusCode() {
 		return statusCode;
 	}
