@@ -25,8 +25,9 @@ public class SudokuGeneratorHandler implements RequestHandler<Map<String, Object
 		LOG.info("received: {}", input);
 		
 		SudokuGenerator generator = new SudokuGenerator();
-
-        PuzzleResults results = generator.generate(50);
+		
+		//generate puzzle with number of givens removed
+        PuzzleResults results = generator.generate(60);
 
         List<List<String>> generatedPuzzles = results.getResults();
         for (List<String> shorthand : generatedPuzzles) {
