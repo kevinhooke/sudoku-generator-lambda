@@ -25,29 +25,33 @@ public class SudokuBulkGeneratorHandler implements RequestHandler<Map<String,Str
     public String handleRequest(Map<String,String> event, Context context)
     {
         String result = "failed";
+        int validPuzzlesGenerated = 0;
         
         SudokuGenerator generator = new SudokuGenerator();
-        for(int attemptsForValidPuzzle = 0; attemptsForValidPuzzle < 5; attemptsForValidPuzzle++) {
-
-            PuzzleResults results = generator.generate(60);
-            if(results.isValidPuzzle()) {
-                List<List<String>> generatedPuzzles = results.getResults();
-                for (List<String> shorthand : generatedPuzzles) {
-                    System.out.println(shorthand);
-                    SudokuPuzzles puzzle = new SudokuPuzzles();
-                    //TODO: change this to ISO string later
-                    puzzle.setId(this.getFormattedISODate());
-                    // 0 = unrated so far, until grader runs  
-                    puzzle.setDifficulty(0);
-                    puzzle.setPuzzle(shorthand);
-                    DynamoDBMapper mapper = new DynamoDBMapper(client);
-                    mapper.save(puzzle);
+        //TODO: parameterize this
+        for(int puzzles=0; puzzles < 10; puzzles++) {
+            for(int attemptsForValidPuzzle = 0; attemptsForValidPuzzle < 5; attemptsForValidPuzzle++) {
+    
+                PuzzleResults results = generator.generate(60);
+                if(results.isValidPuzzle()) {
+                    List<List<String>> generatedPuzzles = results.getResults();
+                    for (List<String> shorthand : generatedPuzzles) {
+                        System.out.println(shorthand);
+                        SudokuPuzzles puzzle = new SudokuPuzzles();
+                        //TODO: change this to ISO string later
+                        puzzle.setId(this.getFormattedISODate());
+                        // 0 = unrated so far, until grader runs  
+                        puzzle.setDifficulty(0);
+                        puzzle.setPuzzle(shorthand);
+                        DynamoDBMapper mapper = new DynamoDBMapper(client);
+                        mapper.save(puzzle);
+                    }
+                    validPuzzlesGenerated++;
+                    break;
                 }
-                result = "success";
-                break;
             }
         }
-        return result;
+        return "Successful puzzles generated: " + validPuzzlesGenerated;
     }
     
     String getFormattedISODate() {
