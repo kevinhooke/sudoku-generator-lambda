@@ -33,12 +33,16 @@ import kh.sudoku.generatorlambda.db.SudokuPuzzles;
 public class SudokuBulkGeneratorHandler implements RequestHandler<Map<String, String>, String> {
 
     static AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
-
+    
     @Override
     public String handleRequest(Map<String, String> event, Context context) {
         String result = "failed";
         int validPuzzlesGenerated = 0;
 
+        System.out.println("targetGivens: " + event.get("targetGivens"));
+        System.out.println("puzzles: " + event.get("puzzles"));
+
+        
         SudokuGenerator generator = new SudokuGenerator();
         
         // TODO: parameterize this
@@ -51,13 +55,15 @@ public class SudokuBulkGeneratorHandler implements RequestHandler<Map<String, St
             }
 
             SudokuPuzzles puzzleToStore = new SudokuPuzzles();
-            // TODO: change this to ISO string later
-            puzzleToStore.setId(this.getFormattedISODate());
-            // 0 = unrated so far, until grader runs
-            puzzleToStore.setDifficulty(0);
+            String dateNow = this.getFormattedISODate();
+            puzzleToStore.setDifficultyAssessedDate(dateNow);
+            puzzleToStore.setGeneratedDate(dateNow);
+            String difficulty = puzzle.getDifficulty().getDifficulty().toString();
+            System.out.println("Difficulty: " + difficulty);
+            puzzleToStore.setDifficulty(difficulty);
             puzzleToStore.setPuzzle(generatedShorthand);
             DynamoDBMapper mapper = new DynamoDBMapper(client);
-            mapper.save(puzzle);
+            mapper.save(puzzleToStore);
         }
         return "Successful puzzles generated: " + validPuzzlesGenerated;
     }

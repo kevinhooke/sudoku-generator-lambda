@@ -12,10 +12,11 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 public class SudokuPuzzles {
 
     private String id;
-    private Integer difficulty; //1=easy, 2=medium, hard=3
+    private String difficulty; //easy, medium, hard
     private Integer givens;
     private String difficultyAssessedDate;
     private String difficultyAssessedStatus; //success, failed
+    private String generatedDate;
     private String humanGraderVersion; // e.g. 0.5, 1,0, 1.5 etc
     private List<String> puzzle;
     
@@ -30,11 +31,11 @@ public class SudokuPuzzles {
     }
 
     @DynamoDBRangeKey(attributeName="difficulty")
-    public Integer getDifficulty() {
+    public String getDifficulty() {
         return difficulty;
     }
 
-    public void setDifficulty(Integer difficulty) {
+    public void setDifficulty(String difficulty) {
         this.difficulty = difficulty;
     }
 
@@ -81,6 +82,15 @@ public class SudokuPuzzles {
 
     public void setGivens(Integer givens) {
         this.givens = givens;
+    }
+
+    @DynamoDBAttribute(attributeName="generatedDate")
+    public String getGeneratedDate() {
+        return generatedDate;
+    }
+
+    public void setGeneratedDate(String generatedDate) {
+        this.generatedDate = generatedDate;
     }
 
     
