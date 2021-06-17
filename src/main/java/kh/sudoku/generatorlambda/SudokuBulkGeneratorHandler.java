@@ -12,48 +12,56 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 
 import kh.sudoku.PuzzleResults;
+import kh.sudoku.generator.GeneratedPuzzleWithDifficulty;
 import kh.sudoku.generator.SudokuGenerator;
 import kh.sudoku.generatorlambda.db.SudokuPuzzles;
 
-
-public class SudokuBulkGeneratorHandler implements RequestHandler<Map<String,String>, String>{
+/**
+ * Lambda for the Bulk Lambda Generator. Generates requested number of valid puzzles
+ * and writes to DynamoDB.
+ * 
+ * Lambda parameters:
+ * 
+ * targetGivens : number of givens required in the generated puzzles. Min value: 17, max (right
+ * now until bug fixed is 20)
+ * 
+ * puzzles: number of puzzles to generate
+ * 
+ * @author kev
+ *
+ */
+public class SudokuBulkGeneratorHandler implements RequestHandler<Map<String, String>, String> {
 
     static AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
 
-    
     @Override
-    public String handleRequest(Map<String,String> event, Context context)
-    {
+    public String handleRequest(Map<String, String> event, Context context) {
         String result = "failed";
         int validPuzzlesGenerated = 0;
-        
+
         SudokuGenerator generator = new SudokuGenerator();
-        //TODO: parameterize this
-        for(int puzzles=0; puzzles < 10; puzzles++) {
-            for(int attemptsForValidPuzzle = 0; attemptsForValidPuzzle < 5; attemptsForValidPuzzle++) {
-    
-                PuzzleResults results = generator.generate(60);
-                if(results.isValidPuzzle()) {
-                    List<List<String>> generatedPuzzles = results.getResults();
-                    for (List<String> shorthand : generatedPuzzles) {
-                        System.out.println(shorthand);
-                        SudokuPuzzles puzzle = new SudokuPuzzles();
-                        //TODO: change this to ISO string later
-                        puzzle.setId(this.getFormattedISODate());
-                        // 0 = unrated so far, until grader runs  
-                        puzzle.setDifficulty(0);
-                        puzzle.setPuzzle(shorthand);
-                        DynamoDBMapper mapper = new DynamoDBMapper(client);
-                        mapper.save(puzzle);
-                    }
-                    validPuzzlesGenerated++;
-                    break;
-                }
+        
+        // TODO: parameterize this
+        
+        List<GeneratedPuzzleWithDifficulty> results = generator.generateGradedPuzzles(20, 1);
+        for (GeneratedPuzzleWithDifficulty puzzle : results) {
+            List<String> generatedShorthand = puzzle.getResults().getResults().get(0);
+            for (String shorthand : generatedShorthand) {
+                System.out.println(shorthand);
             }
+
+            SudokuPuzzles puzzleToStore = new SudokuPuzzles();
+            // TODO: change this to ISO string later
+            puzzleToStore.setId(this.getFormattedISODate());
+            // 0 = unrated so far, until grader runs
+            puzzleToStore.setDifficulty(0);
+            puzzleToStore.setPuzzle(generatedShorthand);
+            DynamoDBMapper mapper = new DynamoDBMapper(client);
+            mapper.save(puzzle);
         }
         return "Successful puzzles generated: " + validPuzzlesGenerated;
     }
-    
+
     String getFormattedISODate() {
         return DateTimeFormatter.ISO_INSTANT.format(Instant.now());
     }
