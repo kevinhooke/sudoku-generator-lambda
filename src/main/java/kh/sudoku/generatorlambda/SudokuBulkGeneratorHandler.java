@@ -38,16 +38,30 @@ public class SudokuBulkGeneratorHandler implements RequestHandler<Map<String, St
     public String handleRequest(Map<String, String> event, Context context) {
         String result = "failed";
         int validPuzzlesGenerated = 0;
-
+        int numberOfPuzzles = 0;
+        
+        String puzzles = event.get("puzzles");
+        
         System.out.println("targetGivens: " + event.get("targetGivens"));
-        System.out.println("puzzles: " + event.get("puzzles"));
+        System.out.println("puzzles: " + puzzles);
 
         
         SudokuGenerator generator = new SudokuGenerator();
         
         // TODO: parameterize this
+        if(puzzles == null || puzzles.trim().equals("")) {
+            numberOfPuzzles = 1;
+            System.out.println("puzzles:null, defaulting to 1");
+        }
+        else {
+            numberOfPuzzles = Integer.parseInt(puzzles);
+            if(numberOfPuzzles > 10) {
+                System.out.println("puzzles > 10, setting to max 10");
+                numberOfPuzzles = 10;
+            }
+        }
         
-        List<GeneratedPuzzleWithDifficulty> results = generator.generateGradedPuzzles(20, 1);
+        List<GeneratedPuzzleWithDifficulty> results = generator.generateGradedPuzzles(20, numberOfPuzzles);
         for (GeneratedPuzzleWithDifficulty puzzle : results) {
             List<String> generatedShorthand = puzzle.getResults().getResults().get(0);
             for (String shorthand : generatedShorthand) {

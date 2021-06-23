@@ -79,3 +79,17 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+        GlobalSecondaryIndexes:
+          - IndexName: PuzzleByDifficultyIndex
+            KeySchema: 
+              - AttributeName: difficulty
+                KeyType: HASH
+              - AttributeName: id
+                KeyType: RANGE
+            Projection:
+              NonKeyAttributes:
+                - puzzle
+              ProjectionType: INCLUDE
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
