@@ -23,9 +23,9 @@ import com.serverless.Response;
 
 import kh.sudoku.db.SudokuPuzzles;
 
-public class GetPuzzleHandler implements RequestHandler<Map<String, Object>, ApiGatewayResponse> {
+public class GetPuzzlePageNoLimitHandler implements RequestHandler<Map<String, Object>, ApiGatewayResponse> {
 
-    private static final Logger LOG = LogManager.getLogger(GetPuzzleHandler.class);
+    private static final Logger LOG = LogManager.getLogger(GetPuzzlePageNoLimitHandler.class);
     static AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
 
     @Override
@@ -45,15 +45,13 @@ public class GetPuzzleHandler implements RequestHandler<Map<String, Object>, Api
                 .withKeyConditionExpression("difficulty = :val2 and id > :val1")
                 .withExpressionAttributeValues(eav)
                 .withIndexName("PuzzleByDifficultyIndex")
-                .withConsistentRead(false)
-                .withLimit(1);
+                .withConsistentRead(false);
 
         DynamoDBQueryExpression<SudokuPuzzles> queryExpression_lessThan = new DynamoDBQueryExpression<SudokuPuzzles>()
                 .withKeyConditionExpression("difficulty = :val2 and id < :val1")
                 .withExpressionAttributeValues(eav)
                 .withIndexName("PuzzleByDifficultyIndex")
-                .withConsistentRead(false)
-                .withLimit(1);
+                .withConsistentRead(false);
         
         // use .queryPage() to retrieve a subset of matching values
         QueryResultPage<SudokuPuzzles> puzzlesResultsPage = mapper.queryPage(SudokuPuzzles.class,
@@ -92,17 +90,15 @@ public class GetPuzzleHandler implements RequestHandler<Map<String, Object>, Api
 
         System.out.println("... retrieved rows: " + puzzles.size());
 
-        String message = null;
+
         if (puzzles.size() > 0) {
             result.put("puzzlesInList", puzzles.size());
             result.put("puzzle", puzzles.get(0));
-            message = "success";
         } else {
             result.put("puzzle", new ArrayList<String>());
-            message = "no_results";
         }
 
-        Response responseBody = new Response(message, result);
+        Response responseBody = new Response("Puzzle result", result);
         return ApiGatewayResponse.builder().setStatusCode(200).setObjectBody(responseBody).build();
     }
 }

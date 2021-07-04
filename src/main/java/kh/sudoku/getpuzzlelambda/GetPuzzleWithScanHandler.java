@@ -12,10 +12,9 @@ import org.apache.logging.log4j.Logger;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.QueryResultPage;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.serverless.ApiGatewayResponse;
@@ -23,9 +22,9 @@ import com.serverless.Response;
 
 import kh.sudoku.db.SudokuPuzzles;
 
-public class GetPuzzleHandler implements RequestHandler<Map<String, Object>, ApiGatewayResponse> {
+public class GetPuzzleWithScanHandler implements RequestHandler<Map<String, Object>, ApiGatewayResponse> {
 
-    private static final Logger LOG = LogManager.getLogger(GetPuzzleHandler.class);
+    private static final Logger LOG = LogManager.getLogger(GetPuzzleWithScanHandler.class);
     static AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
 
     @Override
@@ -41,33 +40,24 @@ public class GetPuzzleHandler implements RequestHandler<Map<String, Object>, Api
         // TODO parameterize this
         eav.put(":val2", new AttributeValue().withS("HARD"));
 
-        DynamoDBQueryExpression<SudokuPuzzles> queryExpression_greaterThan = new DynamoDBQueryExpression<SudokuPuzzles>()
-                .withKeyConditionExpression("difficulty = :val2 and id > :val1")
+        DynamoDBScanExpression queryExpression_greaterThan = new DynamoDBScanExpression()
+                .withFilterExpression("id > :val1 and difficulty = :val2")
                 .withExpressionAttributeValues(eav)
-                .withIndexName("PuzzleByDifficultyIndex")
-                .withConsistentRead(false)
-                .withLimit(1);
-
-        DynamoDBQueryExpression<SudokuPuzzles> queryExpression_lessThan = new DynamoDBQueryExpression<SudokuPuzzles>()
-                .withKeyConditionExpression("difficulty = :val2 and id < :val1")
-                .withExpressionAttributeValues(eav)
-                .withIndexName("PuzzleByDifficultyIndex")
-                .withConsistentRead(false)
+                // limit is the number of rows scanned, not items retrieved
                 .withLimit(1);
         
-        // use .queryPage() to retrieve a subset of matching values
-        QueryResultPage<SudokuPuzzles> puzzlesResultsPage = mapper.queryPage(SudokuPuzzles.class,
-                queryExpression_greaterThan);
+        DynamoDBScanExpression queryExpression_lessThan = new DynamoDBScanExpression()
+                .withFilterExpression("id < :val1 and difficulty = :val2")
+                .withExpressionAttributeValues(eav)
+                .withLimit(1);
+        
+        List<SudokuPuzzles> puzzles = mapper.scan(SudokuPuzzles.class, queryExpression_greaterThan);
 
         Map<String, Object> result = new HashMap<>();
         
-        int puzzlesInPage = puzzlesResultsPage.getCount();
-
-        System.out.println("Puzzles received in page, > queryPage count: " + puzzlesInPage);
-        result.put("gt-page-count", puzzlesInPage);
+        System.out.println("Puzzles received in scan, > scan count: " + puzzles.size());
+        result.put("gt-scan-count", puzzles.size());
         
-        List<SudokuPuzzles> puzzles = puzzlesResultsPage.getResults();
-
         if (puzzles.size() > 0) {
             System.out.println("Found first record on >");
             result.put("resultsOnGtSearchSearch", "true");
@@ -76,13 +66,11 @@ public class GetPuzzleHandler implements RequestHandler<Map<String, Object>, Api
             System.out.println("No match on > query, trying < ...");
             result.put("resultsOnGtSearchSearch", "false");
 
-            puzzlesResultsPage = mapper.queryPage(SudokuPuzzles.class, queryExpression_lessThan);
-            puzzlesInPage = puzzlesResultsPage.getCount();
-            System.out.println("Puzzles received in page, < queryPage count: " + puzzlesInPage);
-            result.put("lt-page-count", puzzlesInPage);
-            puzzles = puzzlesResultsPage.getResults();
+            puzzles = mapper.scan(SudokuPuzzles.class, queryExpression_lessThan);
+            System.out.println("Puzzles received in page, < queryPage count: " + puzzles.size());
+            result.put("lt-scan-count", puzzles.size());
 
-            if(puzzlesInPage > 0) {
+            if(puzzles.size() > 0) {
                 result.put("resultsOnLtSearchSearch", "true");
             }
             else {
@@ -92,17 +80,15 @@ public class GetPuzzleHandler implements RequestHandler<Map<String, Object>, Api
 
         System.out.println("... retrieved rows: " + puzzles.size());
 
-        String message = null;
+
         if (puzzles.size() > 0) {
             result.put("puzzlesInList", puzzles.size());
             result.put("puzzle", puzzles.get(0));
-            message = "success";
         } else {
             result.put("puzzle", new ArrayList<String>());
-            message = "no_results";
         }
 
-        Response responseBody = new Response(message, result);
+        Response responseBody = new Response("Puzzle result", result);
         return ApiGatewayResponse.builder().setStatusCode(200).setObjectBody(responseBody).build();
     }
 }
