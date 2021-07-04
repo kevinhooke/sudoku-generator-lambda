@@ -127,4 +127,8 @@ public class ApiGatewayResponse {
 			return new ApiGatewayResponse(statusCode, body, headers, base64Encoded);
 		}
 	}
+	
+	public String toString() {
+	    return this.body;
+	}
 }
