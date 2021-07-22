@@ -1,16 +1,3 @@
-# Welcome to Serverless!
-#
-# This file is the main config file for your service.
-# It's very minimal at this point and uses default values.
-# You can always add more config options for more control.
-# We've included some commented out config examples here.
-# Just uncomment any of them to get that config option.
-#
-# For full config options, check the docs:
-#    docs.serverless.com
-#
-# Happy Coding!
-
 service: sudoku-generator-lambda
 # app and org for use with dashboard.serverless.com
 #app: your-app-name
@@ -34,22 +21,7 @@ provider:
      Action:
        - "dynamodb:*"
      Resource: "arn:aws:dynamodb:*:*:table/sudoku_puzzles*"
-#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
-#    - Effect: "Allow"
-#      Action:
-#        - "s3:PutObject"
-#      Resource:
-#        Fn::Join:
-#          - ""
-#          - - "arn:aws:s3:::"
-#            - "Ref" : "ServerlessDeploymentBucket"
-#            - "/*"
 
-# you can define service wide environment variables here
-#  environment:
-#    variable1: value1
-
-# you can add packaging information here
 package:
   artifact: target/sudokugenerator-lambda-dev.jar
 
@@ -57,6 +29,27 @@ functions:
   generate-puzzle-bulk:
     handler: kh.sudoku.generatorlambda.SudokuBulkGeneratorHandler
     timeout: 30
+    events:
+      - schedule:
+          rate: cron(0 8 * * ? *)
+          input:
+            puzzles : "2"
+            targetGivens : "17"
+      - schedule:
+          rate: cron(30 8 * * ? *)
+          input:
+            puzzles : "2"
+            targetGivens : "18"
+      - schedule:
+          rate: cron(0 9 * * ? *)
+          input:
+            puzzles : "2"
+            targetGivens : "19"
+      - schedule:
+          rate: cron(30 9 * * ? *)
+          input:
+            puzzles : "2"
+            targetGivens : "20"
     
 
 # you can add CloudFormation resource templates here
