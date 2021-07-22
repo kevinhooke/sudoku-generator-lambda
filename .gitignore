@@ -11,4 +11,7 @@ target
 *.ear
 
 # Serverless directories
-.serverless
+.serverlessnode_modules
+node_modules/
+.serverless/
+package-lock.json

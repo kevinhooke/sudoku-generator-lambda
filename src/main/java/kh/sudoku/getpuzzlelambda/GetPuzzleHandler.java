@@ -103,6 +103,17 @@ public class GetPuzzleHandler implements RequestHandler<Map<String, Object>, Api
         }
 
         Response responseBody = new Response(message, result);
-        return ApiGatewayResponse.builder().setStatusCode(200).setObjectBody(responseBody).build();
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Access-Control-Allow-Origin", "*");
+        headers.put("Access-Control-Allow-Credentials", "true");
+        headers.put("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        headers.put("Access-Control-Allow-Headers",
+          "x-www-form-urlencoded, Origin, X-Requested-With, Content-Type, Accept, Authorization");
+        headers.put("Content-Type", "application/json");
+        return ApiGatewayResponse
+                .builder()
+                .setStatusCode(200)
+                .setHeaders(headers)
+                .setObjectBody(responseBody).build();
     }
 }
