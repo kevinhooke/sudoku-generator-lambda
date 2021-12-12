@@ -32,25 +32,35 @@ public class GetPuzzleHandler implements RequestHandler<Map<String, Object>, Api
     public ApiGatewayResponse handleRequest(Map<String, Object> input, Context context) {
         LOG.info("received: {}", input);
 
+        Map<String, Object> queryParameters = (Map<String, Object>)input.get("queryStringParameters");
+        String difficulty = (String)queryParameters.get("difficulty");
+        LOG.info("... difficulty: " + difficulty);
+        if(difficulty == null || difficulty.equals("")) {
+            difficulty = "EASY";
+        }
+        
         DynamoDBMapper mapper = new DynamoDBMapper(client);
-
+        
+        //generate a new uuid - it doesn't matter what the actual value is, we're using it as a starting point
+        //to find the next stored puzzle that follows this id. If the greater than search doesn't find a record,
+        //we'll search for the first that is before this id instead
         String uuid = UUID.randomUUID().toString();
 
-        Map<String, AttributeValue> eav = new HashMap<String, AttributeValue>();
-        eav.put(":val1", new AttributeValue().withS(uuid));
+        Map<String, AttributeValue> expressionValues = new HashMap<String, AttributeValue>();
+        expressionValues.put(":val1", new AttributeValue().withS(uuid));
         // TODO parameterize this
-        eav.put(":val2", new AttributeValue().withS("HARD"));
+        expressionValues.put(":val2", new AttributeValue().withS(difficulty));
 
         DynamoDBQueryExpression<SudokuPuzzles> queryExpression_greaterThan = new DynamoDBQueryExpression<SudokuPuzzles>()
                 .withKeyConditionExpression("difficulty = :val2 and id > :val1")
-                .withExpressionAttributeValues(eav)
+                .withExpressionAttributeValues(expressionValues)
                 .withIndexName("PuzzleByDifficultyIndex")
                 .withConsistentRead(false)
                 .withLimit(1);
 
         DynamoDBQueryExpression<SudokuPuzzles> queryExpression_lessThan = new DynamoDBQueryExpression<SudokuPuzzles>()
                 .withKeyConditionExpression("difficulty = :val2 and id < :val1")
-                .withExpressionAttributeValues(eav)
+                .withExpressionAttributeValues(expressionValues)
                 .withIndexName("PuzzleByDifficultyIndex")
                 .withConsistentRead(false)
                 .withLimit(1);
